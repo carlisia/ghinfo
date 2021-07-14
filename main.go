@@ -1,14 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"net/url"
 
 	"github.com/carlisia/ghinfo/config"
+	"github.com/carlisia/ghinfo/github"
 	"golang.org/x/oauth2"
 )
 
@@ -18,31 +15,9 @@ const (
 	userAgent = "https://github.com/carlisia/ghinfo"
 )
 
-type Repo struct {
-	ID int `json:"id,omitempty"`
-}
-
 func main() {
-	baseURL, err := url.Parse(baseURL)
-	if err != nil {
-		fmt.Println("error parsing the base URL", err)
-		return
-	}
-
-	path := "/repositories"
-	rel := &url.URL{Path: path}
-	url := baseURL.ResolveReference(rel)
-
 	method := "GET"
-	var buf io.ReadWriter
-	req, err := http.NewRequest(method, url.String(), buf)
-	if err != nil {
-		fmt.Println("error creating the request", err)
-		return
-	}
-
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", userAgent)
+	path := fmt.Sprintf("/repositories")
 
 	// Retrieve the user access token
 	userToken := config.EnvironmentAuthentication()
@@ -54,32 +29,21 @@ func main() {
 		&oauth2.Token{AccessToken: userToken},
 	)
 
-	// Instantiate the client.
+	// Instantiate the client and send the request.
 	tc := oauth2.NewClient(oauth2.NoContext, token)
-	resp, err := tc.Do(req)
-	if err != nil {
-		fmt.Println("error instantiating the client", err)
-		return
+	client := github.NewClient(tc)
+
+	query := map[string]string{
+		"since": "1000",
 	}
-	defer resp.Body.Close()
-
-	fmt.Println("Rate limiting requests remaining: ", resp.Header["X-Ratelimit-Remaining"][0])
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("error making the request", resp.Status)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	var repos []Repo
-	err = json.NewDecoder(resp.Body).Decode(&repos)
+	repos, err := client.PublicRepos(method, path, query)
 	if err != nil {
-		fmt.Println("error decoding the request", err)
-		return
+		log.Fatal(err)
 	}
 
 	if len(repos) < 1 {
 		log.Println("No public repos found")
 	}
+
+	fmt.Println("Total repos:", len(repos))
 }

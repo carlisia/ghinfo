@@ -2,7 +2,7 @@
 
 ## What this system does
 
-This is a CLI app that fetches a list of GH repositories. It returns a list of the first 100 repositories, ordered by ID number.
+This is a CLI app that fetches a list of GH public repositories. It returns a list of the first 100 repositories, ordered by ID number.
 
 ## Steps to run:
 
