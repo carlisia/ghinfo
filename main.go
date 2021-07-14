@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/carlisia/ghinfo/config"
 	"golang.org/x/oauth2"
 )
 
@@ -43,16 +44,21 @@ func main() {
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("User-Agent", userAgent)
 
-	// Instantiate the client.
+	// Retrieve the user access token
+	userToken := config.EnvironmentAuthentication()
+	if userToken == "" {
+		fmt.Println("error: it is likely the personal access token was not set")
+		return
+	}
 	token := oauth2.StaticTokenSource(
-		// Temporary token with very limited read permissions.
-		&oauth2.Token{AccessToken: "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"},
+		&oauth2.Token{AccessToken: userToken},
 	)
 
+	// Instantiate the client.
 	tc := oauth2.NewClient(oauth2.NoContext, token)
 	resp, err := tc.Do(req)
 	if err != nil {
-		fmt.Println("error making the request", err)
+		fmt.Println("error instantiating the client", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -61,6 +67,7 @@ func main() {
 
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("error making the request", resp.Status)
+		return
 	}
 
 	defer resp.Body.Close()
@@ -75,6 +82,4 @@ func main() {
 	if len(repos) < 1 {
 		log.Println("No public repos found")
 	}
-
-	fmt.Printf("%d public repos found\n", len(repos))
 }
