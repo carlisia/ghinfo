@@ -18,7 +18,7 @@ Running the app via the terminal will provide the prompts to print the available
 ## Screenshots
 
 ### Stargazers report, sorted by bucket tiers and in descending order
-![bucket report](https://take.ms/QuLJD)
+![bucket report](img/stargazers.png)
 
 ### License type report, sorted by license type and in ascending order
-![license report](https://take.ms/eHlcG)
+![license report](img/license.png)
