@@ -38,85 +38,79 @@ func TestQueryRepos(t *testing.T) {
 	gh, teardown := newUnitTest(t)
 	t.Cleanup(teardown)
 
-	// A note about this test data set:
-	// Because the GH endpoint for this call already only returns elements whose IDs are higher
-	// (not equal) than the `since` value, there really is nothing to be done with it.
-	// Nevertheless, the `paging.since` value is included for documentation purposes in a way that is consistent
-	// with how it is used by the API. Specifically, the payload should only contain ID values that are higher then
-	// `since` value.
 	testCases := []struct {
 		name          string
 		payload       payload
-		paging        github.Paging
-		reposExpected []github.Repo
+		paging        github.Query
+		reposExpected []github.Repos
 		expectedError string
 	}{
 		{
 			name:          "1 repo, id is in betweek since and max id",
 			payload:       payload{body: []byte(`[{"id": 5}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 10},
-			reposExpected: []github.Repo{{ID: 5}},
+			paging:        github.Query{Since: 1, MaxID: 10},
+			reposExpected: []github.Repos{{ID: 5}},
 		},
 		{
 			name:          "1 repo, id is higher than since and max id",
 			payload:       payload{body: []byte(`[{"id": 10}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 5},
-			reposExpected: []github.Repo{},
+			paging:        github.Query{Since: 1, MaxID: 5},
+			reposExpected: []github.Repos{},
 		},
 		{
 			name:          "2 repos, both with ids after since and below max id",
 			payload:       payload{body: []byte(`[{"id": 4}, {"id": 7}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 10},
-			reposExpected: []github.Repo{{ID: 4}, {ID: 7}},
+			paging:        github.Query{Since: 1, MaxID: 10},
+			reposExpected: []github.Repos{{ID: 4}, {ID: 7}},
 		},
 
 		{
 			name:          "3 repos, last one has max id",
 			payload:       payload{body: []byte(`[{"id": 2}, {"id": 3}, {"id": 5}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 5},
-			reposExpected: []github.Repo{{ID: 2}, {ID: 3}, {ID: 5}},
+			paging:        github.Query{Since: 1, MaxID: 5},
+			reposExpected: []github.Repos{{ID: 2}, {ID: 3}, {ID: 5}},
 		},
 		{
 			name:          "1 repos, id equal to max id",
 			payload:       payload{body: []byte(`[{"id": 6}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 6},
-			reposExpected: []github.Repo{{ID: 6}},
+			paging:        github.Query{Since: 1, MaxID: 6},
+			reposExpected: []github.Repos{{ID: 6}},
 		},
 		{
 			name:          "1 repos, id one less than max id",
 			payload:       payload{body: []byte(`[{"id": 5}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 6},
-			reposExpected: []github.Repo{{ID: 5}},
+			paging:        github.Query{Since: 1, MaxID: 6},
+			reposExpected: []github.Repos{{ID: 5}},
 		},
 		{
 			name:          "1 repos, id one higher than max id",
 			payload:       payload{body: []byte(`[{"id": 7}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 6},
-			reposExpected: []github.Repo{},
+			paging:        github.Query{Since: 1, MaxID: 6},
+			reposExpected: []github.Repos{},
 		},
 		{
 			name:          "1 repos, id one higher than max id",
 			payload:       payload{body: []byte(`[{"id": 7}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 6},
-			reposExpected: []github.Repo{},
+			paging:        github.Query{Since: 1, MaxID: 6},
+			reposExpected: []github.Repos{},
 		},
 		{
 			name:          "4 repos, last one with id higher than max id and none matches the max id",
 			payload:       payload{body: []byte(`[{"id": 2}, {"id": 3}, {"id": 5}, {"id": 50}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 10},
-			reposExpected: []github.Repo{{ID: 2}, {ID: 3}, {ID: 5}},
+			paging:        github.Query{Since: 1, MaxID: 10},
+			reposExpected: []github.Repos{{ID: 2}, {ID: 3}, {ID: 5}},
 		},
 		{
 			name:          "4 repos, one with id higher than max id, and next to the last same as max id",
 			payload:       payload{body: []byte(`[{"id": 2}, {"id": 3}, {"id": 10}, {"id": 50}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 10},
-			reposExpected: []github.Repo{{ID: 2}, {ID: 3}, {ID: 10}},
+			paging:        github.Query{Since: 1, MaxID: 10},
+			reposExpected: []github.Repos{{ID: 2}, {ID: 3}, {ID: 10}},
 		},
 		{
 			name:          "3 repos, last one with id same as max",
 			payload:       payload{body: []byte(`[{"id": 3}, {"id": 10}, {"id": 30}]`), status: http.StatusOK},
-			paging:        github.Paging{Since: 1, MaxID: 30},
-			reposExpected: []github.Repo{{ID: 3}, {ID: 10}, {ID: 30}},
+			paging:        github.Query{Since: 1, MaxID: 30},
+			reposExpected: []github.Repos{{ID: 3}, {ID: 10}, {ID: 30}},
 		},
 	}
 
