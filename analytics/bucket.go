@@ -21,6 +21,7 @@ func (b *BucketReport) Run(ctx context.Context, gh *github.Github) error {
 	if err != nil {
 		return err
 	}
+	b.report.repoCount = len(repos)
 
 	s := b.ParamOptions.SortColumn
 	switch s {
@@ -46,7 +47,7 @@ func (b *BucketReport) Run(ctx context.Context, gh *github.Github) error {
 		}
 	}
 
-	b.report.repoCount = len(repos)
+	fmt.Print("Getting star gazers information for each repository found...\n\n")
 
 	repoInfo, errs := gh.QueryStars(ctx, repos)
 	// TODO: include a prompt asking the user if errors should be displayed)
@@ -62,6 +63,10 @@ func (b *BucketReport) Count() int {
 	return b.report.repoCount
 }
 
+func (b *BucketReport) Name() string {
+	return b.report.name
+}
+
 func (b *BucketReport) PrintStats() {
 	asc := b.sortColumn.asc
 	orderColumn := b.sortColumn.column
@@ -74,7 +79,7 @@ func (b *BucketReport) PrintStats() {
 
 	fmt.Println("Printing a star bucket report...")
 	fmt.Println("Ordering by column: ", orderColumn)
-	fmt.Println("Sorting by asc?: ", asc)
+	fmt.Printf("Sorting by asc?: %v\n\n", asc)
 
 	// TODO: Implement sorting by repo count
 	if orderColumn == repoCol {

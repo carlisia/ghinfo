@@ -127,6 +127,8 @@ func main() {
 		log.Fatalln("Error trying to initalize the GitHub client:", err)
 	}
 
+	fmt.Printf("\nWe are about to retrive data for your %s ...\n\n", report.Name())
+
 	if err := report.Run(ctx, gh); err != nil {
 		log.Fatalln("Error trying to retrieve the repository list:", err)
 	}

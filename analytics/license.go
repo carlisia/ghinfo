@@ -21,6 +21,7 @@ func (l *LicenseTypeReport) Run(ctx context.Context, gh *github.Github) error {
 	if err != nil {
 		return err
 	}
+	l.report.repoCount = len(repos)
 
 	s := l.ParamOptions.SortColumn
 	switch s {
@@ -46,7 +47,7 @@ func (l *LicenseTypeReport) Run(ctx context.Context, gh *github.Github) error {
 		}
 	}
 
-	l.report.repoCount = len(repos)
+	fmt.Print("Getting license type information for each repository found...\n\n")
 
 	repoInfo := gh.QueryLicenses(ctx, repos)
 	l.licenseInfo = repoInfo
@@ -55,6 +56,10 @@ func (l *LicenseTypeReport) Run(ctx context.Context, gh *github.Github) error {
 
 func (l *LicenseTypeReport) Count() int {
 	return l.report.repoCount
+}
+
+func (l *LicenseTypeReport) Name() string {
+	return l.report.name
 }
 
 func (l *LicenseTypeReport) PrintStats() {
@@ -69,7 +74,7 @@ func (l *LicenseTypeReport) PrintStats() {
 
 	fmt.Println("Printing a license report...")
 	fmt.Println("Ordering by column: ", orderColumn)
-	fmt.Println("Sorting by asc?: ", asc)
+	fmt.Printf("Sorting by asc?: %v\n\n", asc)
 
 	// TODO: Implement sorting by repo count
 	if orderColumn == repoCol {

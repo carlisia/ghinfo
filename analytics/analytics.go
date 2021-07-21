@@ -14,8 +14,9 @@ import (
 
 type StatsReport interface {
 	PrintStats()
-	Run(ctx context.Context, gh *github.Github) error
+	Run(context.Context, *github.Github) error
 	Count() int
+	Name() string
 }
 
 // Sorter to be implemented for sorting the different types of reports.
@@ -31,6 +32,7 @@ type ParamOptions struct {
 }
 
 type report struct {
+	name             string
 	query            github.Query
 	repoCount        int
 	aggregatedErrors []error
@@ -45,11 +47,13 @@ const (
 	StarGazers  = "1"
 	LicenseType = "2"
 
-	bucketCol  = "bucket"
-	licenseCol = "license type"
-	repoCol    = "repos"
-	asc        = "asc"
-	desc       = "desc"
+	starGazersReport   = "StarGazers Report"
+	licenseTypesReport = "License Types Report"
+	bucketCol          = "bucket"
+	licenseCol         = "license type"
+	repoCol            = "repos"
+	asc                = "asc"
+	desc               = "desc"
 )
 
 func NewReport(reportType string, opts ParamOptions) (StatsReport, error) {
@@ -62,6 +66,7 @@ func NewReport(reportType string, opts ParamOptions) (StatsReport, error) {
 		return &BucketReport{
 			ParamOptions: opts,
 			report: report{
+				name:  starGazersReport,
 				query: github.Query{Since: opts.Since, MaxID: opts.MaxID},
 			},
 		}, nil
@@ -69,6 +74,7 @@ func NewReport(reportType string, opts ParamOptions) (StatsReport, error) {
 		return &LicenseTypeReport{
 			ParamOptions: opts,
 			report: report{
+				name:  licenseTypesReport,
 				query: github.Query{Since: opts.Since, MaxID: opts.MaxID},
 			},
 		}, nil

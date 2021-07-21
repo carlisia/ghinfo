@@ -10,15 +10,16 @@ Running the app via the terminal will provide the prompts to print the available
 
 ## Steps to run:
 
-- git clone the source
+- git clone or download and unzip the source code
+- cd into the root of the project
 - set an enviroment variable named `GH_TOKEN` to a GH personal access token
 - run `go mod tidy`
-- at the root of the project, run `go run main.go`
+- run `go run main.go`
+- follow the prompts
 
 ## Screenshots
 
 ### Stargazers report, sorted by bucket tiers and in descending order
-![bucket report](img/stargazers.png)
-
+[![asciicast](https://asciinema.org/a/426585.svg?autoplay=1&preload=1)](https://asciinema.org/a/426585)
 ### License type report, sorted by license type and in ascending order
-![license report](img/license.png)
+[![asciicast](https://asciinema.org/a/426587.svg?autoplay=1&preload=1)](https://asciinema.org/a/426587)
