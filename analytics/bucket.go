@@ -3,17 +3,23 @@ package analytics
 import (
 	"context"
 	"fmt"
+	"sort"
 
-	"github.com/carlisia/ghinfo/github"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/jedib0t/go-pretty/text"
+
+	"github.com/carlisia/ghinfo/github"
 )
 
 type BucketReport struct {
 	ParamOptions ParamOptions
-	starInfo     map[string]map[int]int
 	report       report
-	sortColumn   sortColumn
+	aggregate    []aggregateBucket
+}
+
+type aggregateBucket struct {
+	bucket               string
+	repoCount, starCount int
 }
 
 func (b *BucketReport) Run(ctx context.Context, gh *github.Github) error {
@@ -23,30 +29,6 @@ func (b *BucketReport) Run(ctx context.Context, gh *github.Github) error {
 	}
 	b.report.repoCount = len(repos)
 
-	s := b.ParamOptions.SortColumn
-	switch s {
-	case "1":
-		b.sortColumn = sortColumn{
-			asc:    true,
-			column: bucketCol,
-		}
-	case "2":
-		b.sortColumn = sortColumn{
-			asc:    false,
-			column: bucketCol,
-		}
-	case "3":
-		b.sortColumn = sortColumn{
-			asc:    true,
-			column: repoCol,
-		}
-	case "4":
-		b.sortColumn = sortColumn{
-			asc:    false,
-			column: repoCol,
-		}
-	}
-
 	fmt.Print("Getting star gazers information for each repository found...\n\n")
 
 	repoInfo, errs := gh.QueryStars(ctx, repos)
@@ -54,7 +36,19 @@ func (b *BucketReport) Run(ctx context.Context, gh *github.Github) error {
 	if len(errs) > 0 {
 		b.report.aggregatedErrors = append(b.report.aggregatedErrors, errs...)
 	}
-	b.starInfo = repoInfo
+
+	i := 0
+	b.aggregate = make([]aggregateBucket, len(repoInfo))
+	for k, v := range repoInfo {
+		b.aggregate[i].bucket = k
+		for kk, vv := range v {
+			b.aggregate[i].repoCount = kk
+			b.aggregate[i].starCount = vv
+		}
+		i++
+	}
+
+	b.sort()
 
 	return nil
 }
@@ -67,46 +61,46 @@ func (b *BucketReport) Name() string {
 	return b.report.name
 }
 
-func (b *BucketReport) PrintStats() {
-	asc := b.sortColumn.asc
-	orderColumn := b.sortColumn.column
+func (b *BucketReport) sort() {
+	buckets := b.aggregate
+	b.ParamOptions.Column = columnOptions()(StarGazersReportType, b.ParamOptions.Column)
+	sort.Slice(buckets, func(i, j int) bool {
+		var res bool
+		switch b.ParamOptions.Column {
+		case repoCol:
+			res = buckets[i].repoCount < buckets[j].repoCount
+		case starCol:
+			res = buckets[i].starCount < buckets[j].starCount
+		default:
+			res = buckets[i].bucket < buckets[j].bucket
+		}
 
+		if !b.ParamOptions.Asc {
+			return !res
+		}
+		return res
+	})
+}
+
+func (b *BucketReport) PrintStats() {
 	tw := table.NewWriter()
 	tw.AppendHeader(table.Row{"bucket", "#repos", "bucket total stars", "avg stars/repo"})
 
-	var allBucketsStarCount, allBucketsRepoCount int
-	buckets := b.starInfo
-
 	fmt.Println("Printing a star bucket report...")
-	fmt.Println("Ordering by column: ", orderColumn)
-	fmt.Printf("Sorting by asc?: %v\n\n", asc)
+	fmt.Println("Ordering by column: ", b.ParamOptions.Column)
+	fmt.Printf("Sorting by asc?: %v\n\n", b.ParamOptions.Asc)
 
-	// TODO: Implement sorting by repo count
-	if orderColumn == repoCol {
-		fmt.Println("Sorting by repo column not yet implemented. Sorting by bucket count.")
-	}
-	keysBuckets := reportKeys(buckets)
-	keysBuckets = sortStringKeys(keysBuckets, asc)
-
-	for _, tier := range keysBuckets {
-		tierRepoStarCount := buckets[tier]
-		keysRepos := intIntKeys(tierRepoStarCount)
-
-		var bucketNumRepos, bucketStarCount int
-		for _, v := range keysRepos {
-			bucketNumRepos += v
-			bucketStarCount += tierRepoStarCount[v]
-		}
-
+	var allBucketsStarCount, allBucketsRepoCount int
+	for _, bucket := range b.aggregate {
 		var repoAverage float64
-		if bucketNumRepos > 0 {
-			repoAverage = float64(bucketStarCount) / float64(bucketNumRepos)
+		if bucket.repoCount > 0 {
+			repoAverage = float64(bucket.starCount) / float64(bucket.repoCount)
 		}
 
-		allBucketsStarCount = allBucketsStarCount + bucketStarCount
-		allBucketsRepoCount += bucketNumRepos
+		allBucketsStarCount = allBucketsStarCount + bucket.starCount
+		allBucketsRepoCount += bucket.repoCount
 		tw.AppendRows([]table.Row{
-			{tier, bucketNumRepos, bucketStarCount, repoAverage},
+			{bucket.bucket, bucket.repoCount, bucket.starCount, repoAverage},
 		})
 	}
 

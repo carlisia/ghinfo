@@ -169,9 +169,8 @@ func (gh *Github) QueryStars(ctx context.Context, repos []Repos) (map[string]map
 	return buckets, errs
 }
 
-func (gh *Github) QueryLicenses(ctx context.Context, repos []Repos) map[string]map[string]int {
-	recordCount := make(map[string]int)
-	licenses := make(map[string]map[string]int)
+func (gh *Github) QueryLicenses(ctx context.Context, repos []Repos) map[string]int {
+	licenses := make(map[string]int)
 
 	for i := range repos {
 		path := "/repos" + "/" + repos[i].Owner.Login + "/" + repos[i].Name + "/license"
@@ -197,8 +196,7 @@ func (gh *Github) QueryLicenses(ctx context.Context, repos []Repos) map[string]m
 			data.License.Name = "Unknown Error for License Record"
 		}
 
-		recordCount[data.License.Name]++ // this aggregation is not technically a requirement, but could be useful for sorting the report
-		licenses[data.License.Name] = map[string]int{data.License.Name: recordCount[data.License.Name]}
+		licenses[data.License.Name]++
 	}
 
 	return licenses

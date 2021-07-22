@@ -13,22 +13,17 @@ import (
 )
 
 type StatsReport interface {
-	PrintStats()
 	Run(context.Context, *github.Github) error
+	PrintStats()
 	Count() int
 	Name() string
 }
 
-// Sorter to be implemented for sorting the different types of reports.
-// TODO
-type Sorter interface {
-	Sort()
-}
-
 type ParamOptions struct {
-	SortColumn string
-	MaxID      int
-	Since      int
+	Column string
+	Asc    bool
+	MaxID  int
+	Since  int
 }
 
 type report struct {
@@ -38,23 +33,41 @@ type report struct {
 	aggregatedErrors []error
 }
 
-type sortColumn struct {
-	asc    bool
-	column string
-}
-
 const (
-	StarGazers  = "1"
-	LicenseType = "2"
+	StarGazersReportType = "1"
+	LicenseReportType    = "2"
 
-	starGazersReport   = "StarGazers Report"
-	licenseTypesReport = "License Types Report"
-	bucketCol          = "bucket"
-	licenseCol         = "license type"
-	repoCol            = "repos"
-	asc                = "asc"
-	desc               = "desc"
+	starGazersReportName   = "StarGazers Report"
+	licenseTypesReportName = "License Types Report"
+
+	bucketCol  = "bucket"
+	starCol    = "stars"
+	repoCol    = "repos"
+	licenseCol = "license type"
 )
+
+func columnOptions() func(string, string) string {
+	bucket := map[string]string{
+		"1": bucketCol,
+		"2": repoCol,
+		"3": starCol,
+	}
+
+	license := map[string]string{
+		"1": bucketCol,
+		"2": repoCol,
+		"3": starCol,
+	}
+
+	return func(reportType, key string) string {
+		switch reportType {
+		case LicenseReportType:
+			return license[key]
+		default:
+			return bucket[key]
+		}
+	}
+}
 
 func NewReport(reportType string, opts ParamOptions) (StatsReport, error) {
 	if err := validateIDRange(opts.Since, opts.MaxID); err != nil {
@@ -62,19 +75,19 @@ func NewReport(reportType string, opts ParamOptions) (StatsReport, error) {
 	}
 
 	switch reportType {
-	case StarGazers:
+	case StarGazersReportType:
 		return &BucketReport{
 			ParamOptions: opts,
 			report: report{
-				name:  starGazersReport,
+				name:  starGazersReportName,
 				query: github.Query{Since: opts.Since, MaxID: opts.MaxID},
 			},
 		}, nil
-	case LicenseType:
+	case LicenseReportType:
 		return &LicenseTypeReport{
 			ParamOptions: opts,
 			report: report{
-				name:  licenseTypesReport,
+				name:  licenseTypesReportName,
 				query: github.Query{Since: opts.Since, MaxID: opts.MaxID},
 			},
 		}, nil

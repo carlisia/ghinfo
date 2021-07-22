@@ -7,10 +7,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/carlisia/ghinfo/analytics"
-	"github.com/carlisia/ghinfo/github"
 	"github.com/tcnksm/go-input"
 	"golang.org/x/oauth2"
+
+	"github.com/carlisia/ghinfo/analytics"
+	"github.com/carlisia/ghinfo/github"
 )
 
 const baseURL = "https://api.github.com"
@@ -19,22 +20,22 @@ const userAgent = "https://github.com/carlisia/ghinfo"
 func main() {
 	var input2, reportType string
 	fmt.Print("Welcome! 🌞 Please choose a report kind...\n" +
-		"Type 1 for the repository stargazer buckets analytics.\n" +
-		"Type 2 for the repository license types analytics.\n" +
+		"Type 1 for the stargazers analytics.\n" +
+		"Type 2 for the license types analytics.\n" +
 		"$ ")
 	fmt.Scanf("%s", &reportType)
 	if reportType > "2" || reportType < "1" {
 		fmt.Printf("Unfortunately %s is not an option. Please try again.\n", reportType)
 		os.Exit(1)
 	}
-	fmt.Printf("Thank you, you have selected %s. We'll get your started.\n", reportType)
+	fmt.Printf("Thank you, you have selected %s. We'll get your started.\n\n", reportType)
 
 	const gitHubToken = "GH_TOKEN"
 	userToken := os.Getenv(gitHubToken)
 	if userToken == "" {
 		fmt.Print("\nWhile I have your attention: it seems you don't have a personal " +
 			"access token configured. Please be sure to set the enviroment variable `GH_Token` " +
-			"with your personal token in order to authenticate and proceed.\n" +
+			"with your personal token in order to authenticate and proceed.\n\n" +
 			"👋")
 		os.Exit(1)
 	}
@@ -51,7 +52,6 @@ func main() {
 	since, err = ui.Ask(query, &input.Options{
 		Default:  "65624570",
 		Required: true,
-		Loop:     true,
 	})
 	if err != nil {
 		fmt.Print(err)
@@ -67,7 +67,6 @@ func main() {
 	maxID, err = ui.Ask(query, &input.Options{
 		Default:  "65624720",
 		Required: true,
-		Loop:     true,
 	})
 	if err != nil {
 		fmt.Print(err)
@@ -79,33 +78,52 @@ func main() {
 		os.Exit(1)
 	}
 
-	var order string
-	if reportType == analytics.StarGazers {
-		fmt.Print("Please choose the sort order: \n" +
-			"1- asc per bucket \n" +
-			"2- des per bucket \n" +
-			"3- asc per repository (NOT IMPLEMENTED) \n" +
-			"4- desc per repository (NOT IMPLEMENTED) \n" +
+	var column string
+	if reportType == analytics.StarGazersReportType {
+		fmt.Print("Please choose a column to order by:\n" +
+			"1- bucket\n" +
+			"2- repository\n" +
+			"3- total stars \n" +
 			"$ ")
+		fmt.Scanf("%s", &column)
+		if column > "3" || column < "1" {
+			fmt.Printf("Unfortunately %s is not an option. Please try again.\n", column)
+			os.Exit(1)
+		}
 	} else {
-		fmt.Print("Please choose the sort order: \n" +
-			"1- asc per license type \n" +
-			"2- des per license type \n" +
-			"3- asc per repository (NOT IMPLEMENTED) \n" +
-			"4- desc per repository (NOT IMPLEMENTED) \n" +
+		fmt.Print("Please choose a column to order by::\n" +
+			"1- license type \n" +
+			"2- repository \n" +
 			"$ ")
+		fmt.Scanf("%s", &column)
+		if column > "2" || column < "1" {
+			fmt.Printf("Unfortunately %s is not an option. Please try again.\n", column)
+			os.Exit(1)
+		}
 	}
-	fmt.Scanf("%s", &order)
-	if order > "4" || order < "1" {
-		fmt.Printf("Unfortunately %s is not an option. Please try again.\n", order)
+
+	var asc string
+	fmt.Print("Please choose an order to sort by:\n" +
+		"0- asc \n" +
+		"1- desc \n" +
+		"$ ")
+	fmt.Scanf("%s", &asc)
+	if asc > "1" || asc < "0" {
+		fmt.Printf("Unfortunately %s is not an option. Please try again.\n", asc)
+		os.Exit(1)
+	}
+	ascBool, err := strconv.ParseBool(asc)
+	if err != nil {
+		fmt.Print(err)
 		os.Exit(1)
 	}
 
 	opts := analytics.ParamOptions(
 		analytics.ParamOptions{
-			SortColumn: order,
-			Since:      sinceInt,
-			MaxID:      maxIDInt,
+			Column: column,
+			Asc:    !ascBool,
+			Since:  sinceInt,
+			MaxID:  maxIDInt,
 		},
 	)
 
@@ -120,6 +138,7 @@ func main() {
 			AccessToken: userToken,
 		},
 	)
+
 	ctx := context.Background()
 	client := oauth2.NewClient(ctx, tokenSource)
 	gh, err := github.New(client, baseURL, userAgent)

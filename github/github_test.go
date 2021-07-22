@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/carlisia/ghinfo/github"
 	"github.com/stretchr/testify/require"
+
+	"github.com/carlisia/ghinfo/github"
 )
 
 func newUnitTest(t *testing.T) (*github.Github, func()) {
@@ -134,7 +135,7 @@ func TestQueryRepos(t *testing.T) {
 
 // mockResponse builds and returns a fake http response.
 func mockResponse(payload payload) func(req *http.Request) (*http.Response, error) {
-	return func(req *http.Request) (*http.Response, error) {
+	return func(*http.Request) (*http.Response, error) {
 		// Create a new reader with the JSON input.
 		r := ioutil.NopCloser(bytes.NewReader([]byte(payload.body)))
 		return &http.Response{

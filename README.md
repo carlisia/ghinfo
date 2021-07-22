@@ -16,7 +16,6 @@ Running the app via the terminal will provide the prompts to print the available
 - run `go mod tidy`
 - run `go run main.go`
 - follow the prompts
-
 ## Screenshots
 
 ### Stargazers report, sorted by bucket tiers and in descending order

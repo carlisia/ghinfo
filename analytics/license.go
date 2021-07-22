@@ -3,17 +3,23 @@ package analytics
 import (
 	"context"
 	"fmt"
+	"sort"
 
-	"github.com/carlisia/ghinfo/github"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/jedib0t/go-pretty/text"
+
+	"github.com/carlisia/ghinfo/github"
 )
 
 type LicenseTypeReport struct {
 	ParamOptions ParamOptions
-	licenseInfo  map[string]map[string]int
 	report       report
-	sortColumn   sortColumn
+	aggregate    []aggregateLicense
+}
+
+type aggregateLicense struct {
+	license   string
+	repoCount int
 }
 
 func (l *LicenseTypeReport) Run(ctx context.Context, gh *github.Github) error {
@@ -23,34 +29,20 @@ func (l *LicenseTypeReport) Run(ctx context.Context, gh *github.Github) error {
 	}
 	l.report.repoCount = len(repos)
 
-	s := l.ParamOptions.SortColumn
-	switch s {
-	case "1":
-		l.sortColumn = sortColumn{
-			asc:    true,
-			column: licenseCol,
-		}
-	case "2":
-		l.sortColumn = sortColumn{
-			asc:    false,
-			column: licenseCol,
-		}
-	case "3":
-		l.sortColumn = sortColumn{
-			asc:    true,
-			column: repoCol,
-		}
-	case "4":
-		l.sortColumn = sortColumn{
-			asc:    false,
-			column: repoCol,
-		}
-	}
-
 	fmt.Print("Getting license type information for each repository found...\n\n")
 
 	repoInfo := gh.QueryLicenses(ctx, repos)
-	l.licenseInfo = repoInfo
+
+	i := 0
+	l.aggregate = make([]aggregateLicense, len(repoInfo))
+	for k, v := range repoInfo {
+		l.aggregate[i].license = k
+		l.aggregate[i].repoCount = v
+		i++
+	}
+
+	l.sort()
+
 	return nil
 }
 
@@ -62,41 +54,39 @@ func (l *LicenseTypeReport) Name() string {
 	return l.report.name
 }
 
-func (l *LicenseTypeReport) PrintStats() {
-	asc := l.sortColumn.asc
-	orderColumn := l.sortColumn.column
+func (l *LicenseTypeReport) sort() {
+	licenses := l.aggregate
+	l.ParamOptions.Column = columnOptions()(LicenseReportType, l.ParamOptions.Column)
+	sort.Slice(licenses, func(i, j int) bool {
+		var res bool
+		switch l.ParamOptions.Column {
+		case repoCol:
+			res = licenses[i].repoCount < licenses[j].repoCount
+		default:
+			res = licenses[i].license < licenses[j].license
+		}
 
+		if !l.ParamOptions.Asc {
+			return !res
+		}
+		return res
+	})
+}
+
+func (l *LicenseTypeReport) PrintStats() {
 	tw := table.NewWriter()
 	tw.AppendHeader(table.Row{"license type", "#repos"})
 
-	var allLicensessRepoCount int
-	licenses := l.licenseInfo
-
 	fmt.Println("Printing a license report...")
-	fmt.Println("Ordering by column: ", orderColumn)
-	fmt.Printf("Sorting by asc?: %v\n\n", asc)
+	fmt.Println("Ordering by column: ", l.ParamOptions.Column)
+	fmt.Printf("Sorting by asc?: %v\n\n", l.ParamOptions.Asc)
 
-	// TODO: Implement sorting by repo count
-	if orderColumn == repoCol {
-		fmt.Println("Sorting by repo column not yet implemented. Sorting by license type.")
-	}
-	keysLicenses := reportLicenseKeys(licenses)
-	keysLicenses = sortStringKeys(keysLicenses, asc)
-
-	for _, licenseName := range keysLicenses {
-		licenseTypeRepoCount := licenses[licenseName]
-
-		var licenseRepoCount int
-		for _, v := range licenseTypeRepoCount {
-			licenseRepoCount += v
-		}
-
-		allLicensessRepoCount += licenseRepoCount
-		if orderColumn == licenseCol {
-			tw.AppendRows([]table.Row{
-				{licenseName, licenseRepoCount},
-			})
-		}
+	var allLicensessRepoCount int
+	for _, license := range l.aggregate {
+		allLicensessRepoCount += license.repoCount
+		tw.AppendRows([]table.Row{
+			{license, license.repoCount},
+		})
 	}
 
 	tw.AppendFooter(table.Row{"total", allLicensessRepoCount})
