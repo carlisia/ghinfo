@@ -56,6 +56,7 @@ func (gh *Github) do(url string, data interface{}) (*http.Response, error) {
 		return nil, fmt.Errorf("something went wrong with the request: %s", resp.Status)
 	}
 
+	// TODO: Use Unmarshal
 	if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
 		return nil, err
 	}
