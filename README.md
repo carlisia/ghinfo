@@ -16,9 +16,11 @@ Running the app via the terminal will provide the prompts to print the available
 - run `go mod tidy`
 - run `go run main.go`
 - follow the prompts
-## Screenshots
 
-### Stargazers report, sorted by bucket tiers and in descending order
-[![asciicast](https://asciinema.org/a/426585.svg?autoplay=1&preload=1)](https://asciinema.org/a/426585)
-### License type report, sorted by license type and in ascending order
-[![asciicast](https://asciinema.org/a/426587.svg?autoplay=1&preload=1)](https://asciinema.org/a/426587)
+## Previews
+
+### Stargazers report
+[![asciicast](https://asciinema.org/a/426875.svg)](https://asciinema.org/a/426875?autoplay=1&preload=1)
+
+### License type report
+[![asciicast](https://asciinema.org/a/426879.svg)](https://asciinema.org/a/426879?autoplay=1&preload=1)

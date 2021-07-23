@@ -46,6 +46,8 @@ const (
 	licenseCol = "license type"
 )
 
+// TODO: Have a robust CLI that can handle these
+// options with flags.
 func columnOptions() func(string, string) string {
 	bucket := map[string]string{
 		"1": bucketCol,
@@ -56,7 +58,6 @@ func columnOptions() func(string, string) string {
 	license := map[string]string{
 		"1": bucketCol,
 		"2": repoCol,
-		"3": starCol,
 	}
 
 	return func(reportType, key string) string {
