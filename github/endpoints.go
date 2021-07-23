@@ -41,7 +41,7 @@ func (gh *Github) QuerySearchRepos(ctx context.Context, query Query) ([]Repos, e
 		}
 		if lastID >= query.MaxID {
 			// Exclude additional repos that don't meet the cutoff max id.
-			return trim(query.MaxID, repos)
+			return trimUpToMaxID(query.MaxID, repos)
 		}
 		return repos
 	}
@@ -103,7 +103,7 @@ func (gh *Github) QueryRepos(ctx context.Context, query Query) ([]Repos, error) 
 		}
 		if lastID >= query.MaxID {
 			// Exclude additional repos that don't meet the cutoff max id.
-			return trim(query.MaxID, repos)
+			return trimUpToMaxID(query.MaxID, repos)
 		}
 		return repos
 	}
@@ -202,13 +202,10 @@ func (gh *Github) QueryLicenses(ctx context.Context, repos []Repos) map[string]i
 	return licenses
 }
 
-// trim excludes repos that have IDs above the cutoff max ID.
+// trimUpToMaxID excludes repos that have IDs above the cutoff max ID.
 // Because the retrived repos have IDs are not consecutive, it might
 // be the case that the trimmed last ID is maxID but also maxID - n.
-//
-// TODO: Add a test for this function and remove the printouts
-// for visually validating the results.
-func trim(maxID int, repos []Repos) []Repos {
+func trimUpToMaxID(maxID int, repos []Repos) []Repos {
 	// Returns the first number it finds that is greater than or equal to maxID.
 	i := sort.Search(len(repos), func(i int) bool {
 		return repos[i].ID >= maxID
@@ -216,7 +213,6 @@ func trim(maxID int, repos []Repos) []Repos {
 
 	switch {
 	case i < len(repos) && repos[i].ID == maxID:
-		fmt.Println("Trimmming at case 1: max id was found in the set")
 		// max id was found in the set
 		// this means search stopped at maxid
 		// cut starting at i+1
@@ -226,10 +222,8 @@ func trim(maxID int, repos []Repos) []Repos {
 		// ex: 3,10,30
 		// max=30
 		repos = repos[:i+1]
-		fmt.Printf("Last ID of the set being returned: %d\n\n", repos[len(repos)-1].ID)
 		return repos
 	default:
-		fmt.Println("Trimming at max id was found in the set")
 		// max id was not found in the set
 		// this means search stopped at maxid+1
 		// cut starting at i
@@ -237,7 +231,6 @@ func trim(maxID int, repos []Repos) []Repos {
 		// ex: 3,5,50
 		// max=10
 		repos = repos[:i]
-		fmt.Printf("Last ID of the set being returned: %d\n\n", repos[len(repos)-1].ID)
 		return repos
 	}
 }
