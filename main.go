@@ -28,7 +28,7 @@ func main() {
 		fmt.Printf("Unfortunately %s is not an option. Please try again.\n", reportType)
 		os.Exit(1)
 	}
-	fmt.Printf("Thank you, you have selected %s. We'll get your started.\n\n", reportType)
+	fmt.Printf("Thank you, you have selected %s. We'll get your report started.\n\n", reportType)
 
 	const gitHubToken = "GH_TOKEN"
 	userToken := os.Getenv(gitHubToken)
